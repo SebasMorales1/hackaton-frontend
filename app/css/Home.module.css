@@ -45,4 +45,8 @@
 
 .resources {
     margin-top: 5em;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 235px);
+    justify-content: center;
+    gap: 20px;
 }

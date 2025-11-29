@@ -22,7 +22,11 @@ export default function Home() {
         </div>
 
         <section className={styles.resources}>
-          <Resource key={1} name="r1" critical_lvl={20} quantity={33} unit={22} />
+          <Resource key={1} name="Agua" critical_lvl={50} quantity={1000} unit="L" />
+          <Resource key={1} name="Agua" critical_lvl={50} quantity={130} unit="L" />
+          <Resource key={1} name="Agua" critical_lvl={50} quantity={500} unit="L" />
+          <Resource key={1} name="Agua" critical_lvl={50} quantity={20} unit="L" />
+          <Resource key={1} name="Agua" critical_lvl={50} quantity={2000} unit="L" />
         </section>
       </div>
     </div>

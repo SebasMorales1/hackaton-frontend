@@ -5,6 +5,12 @@
   --s-color: #DB5E1D;
 }
 
+button {
+  background: none;
+  border: none;
+  color: white;
+}
+
 * {
   padding: 0;
   margin: 0;
@@ -12,7 +18,7 @@
 }
 
 html {
-  max-width: 100vw;
+  max-width: 1440px;
   overflow-x: hidden;
 }
 
