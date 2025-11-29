@@ -1,7 +1,6 @@
 import type { Route } from "./+types/home"
 import styles from "../css/Home.module.css"
 import Resource from "../components/Resource"
-import SocketDebugger from "../components/SocketDebugger"
 import { Link } from "react-router"
 import { useResources } from "../hooks/useResources"
 
@@ -17,7 +16,6 @@ export default function Home() {
 
   return (
     <div className="container">
-      <SocketDebugger />
       <div className={styles.contain}>
         <h1 className={styles.title}>
           <span>Monitoreo</span> de recursos
