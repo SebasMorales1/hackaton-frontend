@@ -1,23 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import { useSocket } from "./SocketContext";
 import socketService from "../services/socket";
-
-interface ResourceData {
-  id: number;
-  name: string;
-  category: "food" | "oxygen" | "water" | "spare_parts";
-}
-
-interface Resource {
-  id: number;
-  quantity: number;
-  resourceDataId: number;
-  resourceData: ResourceData;
-  minimumLevel: number;
-  criticalLevel: number;
-  maximumLevel: number;
-  unit: "L" | "kg" | "u";
-}
+import type { Resource } from "../types/resource.types";
 
 interface ResourcesContextType {
   resources: Resource[];
@@ -31,19 +15,19 @@ const ResourcesContext = createContext<ResourcesContextType>({
   isConnected: false,
 });
 
-export const useResources = () => {
+export function useResources() {
   const context = useContext(ResourcesContext);
   if (!context) {
     throw new Error("useResources debe usarse dentro de un ResourcesProvider");
   }
   return context;
-};
+}
 
 interface ResourcesProviderProps {
   children: React.ReactNode;
 }
 
-export const ResourcesProvider: React.FC<ResourcesProviderProps> = ({ children }) => {
+function ResourcesProviderComponent({ children }: ResourcesProviderProps) {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const { socket, isConnected } = useSocket();
@@ -55,12 +39,21 @@ export const ResourcesProvider: React.FC<ResourcesProviderProps> = ({ children }
 
   const handleResourcesInitial = useCallback((data: { resources: Resource[]; count: number; timestamp: string }) => {
     if (data.resources && Array.isArray(data.resources)) {
+      console.log("📦 Datos recibidos:", data.resources.length, "recursos");
+      console.log("📦 Primer recurso:", JSON.stringify(data.resources[0], null, 2));
+      
       const validResources = data.resources.filter(r => 
         r && r.resourceData && r.resourceData.name && r.quantity !== undefined
       );
       
+      console.log("✅ Recursos válidos después del filtro:", validResources.length);
+      
       if (validResources.length > 0) {
-        console.log("📦 Recursos iniciales:", validResources.length);
+        console.log("📦 Recursos iniciales cargados:", validResources.length);
+        console.log("📦 Ejemplo:", validResources[0].resourceData.name);
+      } else {
+        console.error("❌ Todos los recursos fueron filtrados!");
+        console.log("❌ Estructura del primer recurso:", data.resources[0]);
       }
       
       setResources(validResources);
@@ -69,16 +62,29 @@ export const ResourcesProvider: React.FC<ResourcesProviderProps> = ({ children }
   }, []);
 
   const handleConnectionUpdate = useCallback((data: { resources: Resource[]; count: number; timestamp: string }) => {
-    if (!data.resources || !Array.isArray(data.resources)) return;
+    console.log("🔄 Actualización recibida del servidor");
+    
+    if (!data.resources || !Array.isArray(data.resources)) {
+      console.warn("⚠️ Datos inválidos en actualización");
+      return;
+    }
+    
+    console.log("🔄 Recursos en actualización:", data.resources.length);
     
     const validResources = data.resources.filter(r => 
       r && r.resourceData && r.resourceData.name && r.quantity !== undefined
     );
     
+    console.log("🔄 Recursos válidos en actualización:", validResources.length);
+    
     setResources(prevResources => {
-      if (prevResources.length === 0) return validResources;
+      if (prevResources.length === 0) {
+        console.log("   ✅ Primera carga desde actualización");
+        return validResources;
+      }
+      
       if (prevResources.length !== validResources.length) {
-        console.log("🔄 Cambios detectados");
+        console.log("   ✅ Cantidad cambió:", prevResources.length, "→", validResources.length);
         return validResources;
       }
       
@@ -95,10 +101,12 @@ export const ResourcesProvider: React.FC<ResourcesProviderProps> = ({ children }
       }
       
       if (hasChanges) {
-        console.log("🔄 Cambios detectados");
+        console.log("   ✅ Cambios detectados, actualizando recursos");
+        return validResources;
       }
       
-      return hasChanges ? validResources : prevResources;
+      console.log("   ⏭️ Sin cambios reales, manteniendo estado");
+      return prevResources;
     });
   }, []);
 
@@ -133,7 +141,7 @@ export const ResourcesProvider: React.FC<ResourcesProviderProps> = ({ children }
       {children}
     </ResourcesContext.Provider>
   );
-};
+}
 
-// Solo exportar el hook y el provider, no el contexto directamente
-// Esto ayuda a React Fast Refresh
+// IMPORTANTE: Exportar como constante para React Fast Refresh
+export const ResourcesProvider = ResourcesProviderComponent;
