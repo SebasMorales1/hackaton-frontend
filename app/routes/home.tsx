@@ -37,17 +37,19 @@ export default function Home() {
               Cargando recursos desde el servidor...
             </p>
           ) : resources.length > 0 ? (
-            resources.map((resource: any) => (
-              <Resource
-                key={resource.id}
-                id={resource.id}
-                name={resource.resourceData?.name || "Sin nombre"}
-                critical_lvl={resource.criticalLevel}
-                quantity={resource.quantity}
-                unit={resource.unit}
-                date={new Date().toLocaleDateString()}
-              />
-            ))
+            resources
+              .filter((resource: any) => resource.resourceData && resource.resourceData.name)
+              .map((resource: any) => (
+                <Resource
+                  key={resource.id}
+                  id={resource.id}
+                  name={resource.resourceData.name}
+                  critical_lvl={resource.criticalLevel}
+                  quantity={resource.quantity}
+                  unit={resource.unit}
+                  date={new Date().toLocaleDateString()}
+                />
+              ))
           ) : (
             <p style={{ textAlign: "center", padding: "20px", color: "#666" }}>
               {isConnected 

@@ -74,7 +74,17 @@ export const ResourcesProvider: React.FC<ResourcesProviderProps> = ({ children }
       console.log("   - Timestamp:", data.timestamp);
       
       if (data.resources && Array.isArray(data.resources)) {
-        setResources(data.resources);
+        // Filtrar recursos válidos que tengan resourceData con nombre
+        const validResources = data.resources.filter(r => 
+          r && r.resourceData && r.resourceData.name && r.quantity !== undefined
+        );
+        console.log("   - Recursos válidos:", validResources.length);
+        
+        if (validResources.length !== data.resources.length) {
+          console.warn("⚠️ Se encontraron recursos sin datos completos. Fueron filtrados.");
+        }
+        
+        setResources(validResources);
         setLoading(false);
       }
     };
@@ -86,7 +96,13 @@ export const ResourcesProvider: React.FC<ResourcesProviderProps> = ({ children }
       console.log("   - Timestamp:", data.timestamp);
       
       if (data.resources && Array.isArray(data.resources)) {
-        setResources(data.resources);
+        // Filtrar recursos válidos
+        const validResources = data.resources.filter(r => 
+          r && r.resourceData && r.resourceData.name && r.quantity !== undefined
+        );
+        console.log("   - Recursos válidos:", validResources.length);
+        
+        setResources(validResources);
         setLoading(false);
       }
     };

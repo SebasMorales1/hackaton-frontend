@@ -136,28 +136,30 @@ export default function Manager() {
                     </p>
                 ) : (
                     <section className={homeStyles.resources}>
-                        {resources.map((resource: any) => {
-                            const isCritical = resource.quantity <= resource.criticalLevel;
+                        {resources
+                            .filter((resource: any) => resource.resourceData && resource.resourceData.name)
+                            .map((resource: any) => {
+                                const isCritical = resource.quantity <= resource.criticalLevel;
                             
-                            return (
-                                <article 
-                                    key={resource.id}
-                                    className={`${resourceStyles.contain} ${isCritical ? resourceStyles.low : ""}`}
-                                    onClick={() => setSelectedResource(resource)}
-                                    style={{ cursor: "pointer" }}
-                                >
-                                    <div style={{ 
-                                        display: "inline-block",
-                                        padding: "3px 8px",
-                                        background: getCategoryColor(resource.resourceData.category),
-                                        color: "white",
-                                        fontSize: "0.7em",
-                                        marginBottom: "5px",
-                                        fontWeight: "bold",
-                                        textTransform: "uppercase"
-                                    }}>
-                                        {getCategoryName(resource.resourceData.category)}
-                                    </div>
+                                return (
+                                    <article 
+                                        key={resource.id}
+                                        className={`${resourceStyles.contain} ${isCritical ? resourceStyles.low : ""}`}
+                                        onClick={() => setSelectedResource(resource)}
+                                        style={{ cursor: "pointer" }}
+                                    >
+                                        <div style={{ 
+                                            display: "inline-block",
+                                            padding: "3px 8px",
+                                            background: getCategoryColor(resource.resourceData.category),
+                                            color: "white",
+                                            fontSize: "0.7em",
+                                            marginBottom: "5px",
+                                            fontWeight: "bold",
+                                            textTransform: "uppercase"
+                                        }}>
+                                            {getCategoryName(resource.resourceData.category)}
+                                        </div>
                                     
                                     <h3 className={resourceStyles.name}>
                                         {resource.resourceData.name}
