@@ -1,7 +1,11 @@
 import type { Route } from "./+types/home"
 import styles from "../css/Home.module.css"
 import Resource from "../components/Resource"
-import { Link } from "react-router"
+import { data, Link } from "react-router"
+import { useState, useEffect } from "react"
+import { io } from "socket.io-client"
+
+const socket = io("");
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,6 +15,18 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const [resources, setResources] = useState([]);
+
+  useEffect(() => {
+    socket.on("connection", () => {
+      setResources((prev) => [...prev, data])
+    })
+
+    return () => {
+      socket.off("connection")
+    }
+  }, [])
+
   return (
     <div className="container">
       <div className={styles.contain}>
