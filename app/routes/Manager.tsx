@@ -1,18 +1,302 @@
 import type { Route } from "./+types/home"
 import { Link } from "react-router"
 import styles from "../css/Manager.module.css"
+import { useResources } from "../hooks/useResources"
+import { useState } from "react"
+import config from "../config/app.config"
 
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Gestionar" },
-    { name: "description", content: "Monitoreo de recursos de la colonia" },
+    { name: "description", content: "Gestión de recursos de la colonia" },
   ];
 }
 
-export default () => {
+export default function Manager() {
+    const { resources, loading, isConnected } = useResources();
+    const [selectedResource, setSelectedResource] = useState<any>(null);
+    const [newQuantity, setNewQuantity] = useState("");
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [message, setMessage] = useState("");
+
+    const handleUpdateQuantity = async (resourceId: number, quantity: number) => {
+        setIsUpdating(true);
+        setMessage("");
+        
+        try {
+            const response = await fetch(`${config.API_URL}/resources/${resourceId}/update-quantity`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ quantity })
+            });
+
+            if (response.ok) {
+                setMessage("✅ Cantidad actualizada exitosamente");
+                setSelectedResource(null);
+                setNewQuantity("");
+                setTimeout(() => setMessage(""), 3000);
+            } else {
+                const error = await response.json();
+                setMessage(`❌ Error: ${error.message || 'No se pudo actualizar'}`);
+            }
+        } catch (error) {
+            setMessage("❌ Error de conexión con el servidor");
+            console.error(error);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const getCriticalResources = () => {
+        return resources.filter((r: any) => r.quantity <= r.criticalLevel);
+    };
+
+    const getCategoryColor = (category: string) => {
+        return config.CATEGORY_COLORS[category as keyof typeof config.CATEGORY_COLORS] || "#666";
+    };
+
+    const getCategoryName = (category: string) => {
+        return config.CATEGORY_NAMES[category as keyof typeof config.CATEGORY_NAMES] || category;
+    };
+
     return (
         <div className="container">
-            <h1>Gestionar recursos</h1>
+            <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+                    <h1 style={{ fontSize: "2rem", fontWeight: "bold" }}>
+                        Gestionar recursos {isConnected ? "🟢" : "🔴"}
+                    </h1>
+                    <Link to="/" style={{ padding: "10px 20px", background: "#333", color: "white", textDecoration: "none", borderRadius: "5px" }}>
+                        ← Volver al monitoreo
+                    </Link>
+                </div>
+
+                {message && (
+                    <div style={{ 
+                        padding: "15px", 
+                        marginBottom: "20px", 
+                        background: message.includes("✅") ? "#d4edda" : "#f8d7da",
+                        border: `1px solid ${message.includes("✅") ? "#c3e6cb" : "#f5c6cb"}`,
+                        borderRadius: "5px",
+                        color: message.includes("✅") ? "#155724" : "#721c24"
+                    }}>
+                        {message}
+                    </div>
+                )}
+
+                {/* Alertas críticas */}
+                {getCriticalResources().length > 0 && (
+                    <div style={{ 
+                        background: "#ff5252", 
+                        color: "white", 
+                        padding: "20px", 
+                        borderRadius: "10px", 
+                        marginBottom: "30px",
+                        boxShadow: "0 4px 12px rgba(255,82,82,0.3)"
+                    }}>
+                        <h2 style={{ margin: "0 0 10px 0", fontSize: "1.5rem" }}>
+                            ⚠️ Recursos en nivel crítico ({getCriticalResources().length})
+                        </h2>
+                        <div style={{ display: "grid", gap: "10px" }}>
+                            {getCriticalResources().map((resource: any) => (
+                                <div key={resource.id} style={{ 
+                                    background: "rgba(255,255,255,0.2)", 
+                                    padding: "10px", 
+                                    borderRadius: "5px" 
+                                }}>
+                                    <strong>{resource.resourceData.name}</strong>: {resource.quantity} {resource.unit} 
+                                    (crítico: {resource.criticalLevel} {resource.unit})
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {loading ? (
+                    <p style={{ textAlign: "center", padding: "40px", fontSize: "1.2rem", color: "#666" }}>
+                        Cargando recursos...
+                    </p>
+                ) : (
+                    <div style={{ display: "grid", gap: "20px" }}>
+                        <h2 style={{ fontSize: "1.5rem", marginBottom: "10px" }}>
+                            Todos los recursos ({resources.length})
+                        </h2>
+                        
+                        <div style={{ 
+                            display: "grid", 
+                            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", 
+                            gap: "20px" 
+                        }}>
+                            {resources.map((resource: any) => {
+                                const isCritical = resource.quantity <= resource.criticalLevel;
+                                const isLow = resource.quantity <= resource.minimumLevel;
+                                
+                                return (
+                                    <div 
+                                        key={resource.id}
+                                        style={{
+                                            border: `3px solid ${isCritical ? "#ff5252" : isLow ? "#ff9800" : "#e0e0e0"}`,
+                                            borderRadius: "10px",
+                                            padding: "20px",
+                                            background: "white",
+                                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                                            transition: "transform 0.2s",
+                                            cursor: "pointer"
+                                        }}
+                                        onClick={() => setSelectedResource(resource)}
+                                    >
+                                        <div style={{ 
+                                            display: "inline-block",
+                                            padding: "5px 10px",
+                                            background: getCategoryColor(resource.resourceData.category),
+                                            color: "white",
+                                            borderRadius: "5px",
+                                            fontSize: "0.8rem",
+                                            marginBottom: "10px",
+                                            fontWeight: "bold"
+                                        }}>
+                                            {getCategoryName(resource.resourceData.category)}
+                                        </div>
+                                        
+                                        <h3 style={{ margin: "10px 0", fontSize: "1.3rem" }}>
+                                            {resource.resourceData.name}
+                                        </h3>
+                                        
+                                        <div style={{ fontSize: "2rem", fontWeight: "bold", margin: "15px 0" }}>
+                                            {resource.quantity} <span style={{ fontSize: "1.2rem", color: "#666" }}>{resource.unit}</span>
+                                        </div>
+                                        
+                                        <div style={{ fontSize: "0.9rem", color: "#666", marginTop: "10px" }}>
+                                            <div>Mínimo: {resource.minimumLevel} {resource.unit}</div>
+                                            <div>Crítico: {resource.criticalLevel} {resource.unit}</div>
+                                            <div>Máximo: {resource.maximumLevel} {resource.unit}</div>
+                                        </div>
+                                        
+                                        {isCritical && (
+                                            <div style={{ 
+                                                marginTop: "15px", 
+                                                padding: "10px", 
+                                                background: "#ff5252", 
+                                                color: "white", 
+                                                borderRadius: "5px",
+                                                fontWeight: "bold",
+                                                textAlign: "center"
+                                            }}>
+                                                ⚠️ NIVEL CRÍTICO
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal para actualizar cantidad */}
+                {selectedResource && (
+                    <div style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0,0,0,0.7)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 1000
+                    }}
+                    onClick={() => setSelectedResource(null)}
+                    >
+                        <div 
+                            style={{
+                                background: "white",
+                                padding: "30px",
+                                borderRadius: "15px",
+                                maxWidth: "500px",
+                                width: "90%",
+                                boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h2 style={{ marginTop: 0 }}>Actualizar cantidad</h2>
+                            <h3 style={{ color: "#666" }}>{selectedResource.resourceData.name}</h3>
+                            
+                            <div style={{ margin: "20px 0" }}>
+                                <div style={{ marginBottom: "10px", color: "#666" }}>
+                                    Cantidad actual: <strong>{selectedResource.quantity} {selectedResource.unit}</strong>
+                                </div>
+                                <div style={{ marginBottom: "10px", color: "#666" }}>
+                                    Rango: {selectedResource.minimumLevel} - {selectedResource.maximumLevel} {selectedResource.unit}
+                                </div>
+                            </div>
+
+                            <input
+                                type="number"
+                                placeholder="Nueva cantidad"
+                                value={newQuantity}
+                                onChange={(e) => setNewQuantity(e.target.value)}
+                                style={{
+                                    width: "100%",
+                                    padding: "15px",
+                                    fontSize: "1.2rem",
+                                    border: "2px solid #e0e0e0",
+                                    borderRadius: "8px",
+                                    marginBottom: "20px",
+                                    boxSizing: "border-box"
+                                }}
+                                min={0}
+                                max={selectedResource.maximumLevel}
+                            />
+
+                            <div style={{ display: "flex", gap: "10px" }}>
+                                <button
+                                    onClick={() => {
+                                        if (newQuantity && !isNaN(Number(newQuantity))) {
+                                            handleUpdateQuantity(selectedResource.id, Number(newQuantity));
+                                        }
+                                    }}
+                                    disabled={isUpdating || !newQuantity}
+                                    style={{
+                                        flex: 1,
+                                        padding: "15px",
+                                        background: isUpdating ? "#ccc" : "#4caf50",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        fontSize: "1rem",
+                                        fontWeight: "bold",
+                                        cursor: isUpdating ? "not-allowed" : "pointer"
+                                    }}
+                                >
+                                    {isUpdating ? "Actualizando..." : "Actualizar"}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setSelectedResource(null);
+                                        setNewQuantity("");
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: "15px",
+                                        background: "#666",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "8px",
+                                        fontSize: "1rem",
+                                        fontWeight: "bold",
+                                        cursor: "pointer"
+                                    }}
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

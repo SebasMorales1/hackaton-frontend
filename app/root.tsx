@@ -23,6 +23,9 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+import { SocketProvider } from "./context/SocketContext";
+import { ResourcesProvider } from "./context/ResourcesContext";
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -42,7 +45,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <SocketProvider>
+      <ResourcesProvider>
+        <Outlet />
+      </ResourcesProvider>
+    </SocketProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

@@ -6,12 +6,17 @@ import CompleteResource from "./CompleteResource";
 function Resource ({id, name, unit, quantity, critical_lvl, date}) {
     const [modal, setModal] = useState(true);
 
+    // El backend no acepta solicitudes de recursos individuales
+    const handleRequestResource = () => {
+        alert(`El recurso "${name}" está siendo monitoreado en tiempo real.\\nLas actualizaciones se reciben automáticamente cada minuto.`);
+    };
+
     return (
         <article className={`${styles.contain} ${quantity <= critical_lvl ? styles.low : ""}`}>
             <h3 className={styles.name}>{name}</h3>
             <p className={styles.quantity}>{quantity} <span>{unit}</span></p>
             <div className={styles.btn_container}>
-                <button className={styles.btn}>Solicitar</button>
+                <button className={styles.btn} onClick={handleRequestResource}>Info</button>
                 <button className={styles.btn} onClick={(_) => setModal(false)}>Consultar</button>
             </div>
 
@@ -30,7 +35,7 @@ function Resource ({id, name, unit, quantity, critical_lvl, date}) {
                             <p>Fecha</p>
                         </div>
                         <ul className={styles.modal__list}>
-                            <CompleteResource key={2} name={name} quantity={quantity} date={date}  />
+                            <CompleteResource key={id} name={name} quantity={quantity} date={date}  />
                         </ul>
                     </div>
                 </div>
