@@ -1,0 +1,10 @@
+.contain {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #222;
+    padding-bottom: 1em;
+}
+
+.contain p {
+    font-weight: 500;
+}
